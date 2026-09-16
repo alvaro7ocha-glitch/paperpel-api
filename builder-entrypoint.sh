@@ -6,4 +6,8 @@ cd ../..
 
 ./node_modules/.bin/prisma migrate deploy --schema=packages/prisma/postgresql/schema.prisma --config=packages/prisma/prisma.config.ts
 
-NODE_OPTIONS="--no-node-snapshot --max-old-space-size=320" HOSTNAME=0.0.0.0 PORT=${PORT:-10000} node apps/builder/server.js
+export NODE_OPTIONS="--no-node-snapshot --max-old-space-size=384"
+export HOSTNAME="0.0.0.0"
+export PORT="${PORT:-10000}"
+
+exec node apps/builder/server.js
