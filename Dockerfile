@@ -1,3 +1,7 @@
 FROM baptistearno/typebot-builder:latest
 
-ENTRYPOINT ["sh", "-c", "NODE_OPTIONS='--no-node-snapshot --max-old-space-size=448' node apps/builder/server.js"]
+COPY builder-entrypoint.sh /app/builder-entrypoint.sh
+
+RUN chmod +x /app/builder-entrypoint.sh
+
+ENTRYPOINT ["/app/builder-entrypoint.sh"]
