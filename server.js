@@ -53,7 +53,7 @@ app.get("/teste-neon", async (req, res) => {
   }
 });
 
-// Rota para Salvar / Atualizar Ficha com retorno detalhado de erro do PostgreSQL
+// Rota para Salvar / Atualizar Ficha com diagnóstico total
 app.post("/api/fichas", async (req, res) => {
   try {
     const { name, slug, classe, hobbies, ratings, photo, updatedAt } = req.body;
@@ -87,8 +87,8 @@ app.post("/api/fichas", async (req, res) => {
     res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
   } catch (error) {
     console.error("Erro detalhado ao salvar no Neon:", error);
-    // Envia a mensagem exata do erro do banco para o frontend diagnosticar
-    res.status(500).json({ erro: error.message });
+    // Envia o erro em formato de texto explícito para o frontend
+    res.status(500).json({ erro: error.toString() });
   }
 });
 
