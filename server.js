@@ -4,10 +4,7 @@ const { Pool } = require("pg");
 
 const app = express();
 
-// Permite requisições de outros domínios
 app.use(cors());
-
-// Aumenta o limite para aceitar imagens em Base64 grandes
 app.use(express.json({ limit: "10mb" }));
 
 const pool = new Pool({
@@ -17,8 +14,8 @@ const pool = new Pool({
   }
 });
 
-// Garante a criação da tabela no Neon automaticamente ao iniciar
-const criarTabelaSeNaoExistir = async () => {
+// Garante a criação da tabela no Neon de forma síncrona/garantida ao iniciar
+async function setupDatabase() {
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS fichas_gamificacao (
@@ -31,13 +28,13 @@ const criarTabelaSeNaoExistir = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log("Tabela 'fichas_gamificacao' verificada/criada no Neon com sucesso!");
+    console.log("Tabela 'fichas_gamificacao' pronta no Neon!");
   } catch (err) {
-    console.error("Erro ao verificar/criar tabela no Neon:", err.message);
+    console.error("Erro crítico ao criar tabela no Neon:", err);
   }
-};
+}
 
-criarTabelaSeNaoExistir();
+setupDatabase();
 
 app.get("/", (req, res) => {
   res.json({ status: "online", servico: "Paperpel API" });
@@ -53,12 +50,12 @@ app.get("/teste-neon", async (req, res) => {
   }
 });
 
-// Rota para Salvar / Atualizar Ficha com diagnóstico total
+// Rota para Salvar / Atualizar Ficha
 app.post("/api/fichas", async (req, res) => {
   try {
     const { name, slug, classe, hobbies, ratings, photo, updatedAt } = req.body;
     if (!name || !slug) {
-      return res.status(400).json({ erro: "Nome e slug são obrigatórios." });
+      return.status(400).json({ erro: "Nome e slug são obrigatórios." });
     }
 
     const query = `
@@ -84,11 +81,11 @@ app.post("/api/fichas", async (req, res) => {
       updatedAt || new Date().toISOString()
     ]);
 
-    res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
+    return res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
   } catch (error) {
     console.error("Erro detalhado ao salvar no Neon:", error);
-    // Envia o erro em formato de texto explícito para o frontend
-    res.status(500).json({ erro: error.toString() });
+    // Garante que o erro é enviado como string JSON válida
+    return res.status(500).json({ erro: error.message || String(error) });
   }
 });
 
@@ -103,7 +100,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
     }
 
     const row = result.rows[0];
-    res.json({
+    return res.json({
       name: row.name,
       slug: row.slug,
       classe: row.classe,
@@ -114,7 +111,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
     });
   } catch (error) {
     console.error("Erro ao buscar no Neon:", error);
-    res.status(500).json({ erro: error.message });
+    return res.status(500).json({ erro: error.message || String(error) });
   }
 });
 
