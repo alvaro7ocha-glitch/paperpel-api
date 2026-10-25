@@ -14,7 +14,7 @@ const pool = new Pool({
   }
 });
 
-// Garante a criação da tabela no Neon de forma síncrona/garantida ao iniciar
+// Criação automática da tabela no Neon
 async function setupDatabase() {
   try {
     await pool.query(`
@@ -30,7 +30,7 @@ async function setupDatabase() {
     `);
     console.log("Tabela 'fichas_gamificacao' pronta no Neon!");
   } catch (err) {
-    console.error("Erro crítico ao criar tabela no Neon:", err);
+    console.error("Erro ao criar tabela no Neon:", err);
   }
 }
 
@@ -45,7 +45,6 @@ app.get("/teste-neon", async (req, res) => {
     const result = await pool.query("SELECT NOW()");
     res.json({ conectado: true, banco: "Neon PostgreSQL", horario: result.rows[0].now });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ conectado: false, erro: error.message });
   }
 });
@@ -55,7 +54,7 @@ app.post("/api/fichas", async (req, res) => {
   try {
     const { name, slug, classe, hobbies, ratings, photo, updatedAt } = req.body;
     if (!name || !slug) {
-      return.status(400).json({ erro: "Nome e slug são obrigatórios." });
+      return res.status(400).json({ erro: "Nome e slug são obrigatórios." });
     }
 
     const query = `
@@ -83,9 +82,8 @@ app.post("/api/fichas", async (req, res) => {
 
     return res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
   } catch (error) {
-    console.error("Erro detalhado ao salvar no Neon:", error);
-    // Garante que o erro é enviado como string JSON válida
-    return res.status(500).json({ erro: error.message || String(error) });
+    console.error("Erro ao salvar:", error);
+    return res.status(500).json({ erro: error.message });
   }
 });
 
@@ -110,8 +108,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
       updatedAt: row.updated_at
     });
   } catch (error) {
-    console.error("Erro ao buscar no Neon:", error);
-    return res.status(500).json({ erro: error.message || String(error) });
+    return res.status(500).json({ erro: error.message });
   }
 });
 
