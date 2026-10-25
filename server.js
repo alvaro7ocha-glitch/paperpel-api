@@ -5,7 +5,7 @@ const { Pool } = require("pg");
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "5mb" })); // Aumentado o limite para aceitar a imagem em Base64
+app.use(express.json({ limit: "5mb" }));
 
 const pool = new Pool({
   connectionString: process.env.NEON_DATABASE_URL,
@@ -14,52 +14,44 @@ const pool = new Pool({
   }
 });
 
-// Garante que a tabela existe no banco Neon
-async function initDb() {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS fichas_gamificacao (
-        slug TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        classe TEXT,
-        hobbies TEXT,
-        ratings JSONB,
-        photo TEXT,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    console.log("Tabela de fichas verificada/criada com sucesso.");
-  } catch (err) {
-    console.error("Erro ao criar tabela no Neon:", err);
-  }
-}
-initDb();
+// Criação da tabela de forma segura ao iniciar
+pool.query(`
+  CREATE TABLE IF NOT EXISTS fichas_gamificacao (
+    slug TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    classe TEXT,
+    hobbies TEXT,
+    ratings JSONB,
+    photo TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`).catchall?.() || pool.query(`
+  CREATE TABLE IF NOT EXISTS fichas_gamificacao (
+    slug TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    classe TEXT,
+    hobbies TEXT,
+    ratings JSONB,
+    photo TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`).catch(err => console.error("Erro ao criar tabela:", err));
 
 app.get("/", (req, res) => {
-  res.json({
-    status: "online",
-    servico: "Paperpel API"
-  });
+  res.json({ status: "online", servico: "Paperpel API" });
 });
 
 app.get("/teste-neon", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
-    res.json({
-      conectado: true,
-      banco: "Neon PostgreSQL",
-      horario: result.rows[0].now
-    });
+    res.json({ conectado: true, banco: "Neon PostgreSQL", horario: result.rows[0].now });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      conectado: false,
-      erro: "Não foi possível conectar ao Neon"
-    });
+    res.status(500).json({ conectado: false, erro: error.message });
   }
 });
 
-// Salvar ou atualizar ficha
+// Rota para Salvar Ficha
 app.post("/api/fichas", async (req, res) => {
   try {
     const { name, slug, classe, hobbies, ratings, photo, updatedAt } = req.body;
@@ -81,14 +73,14 @@ app.post("/api/fichas", async (req, res) => {
     `;
 
     await pool.query(query, [slug, name, classe, hobbies, JSON.stringify(ratings), photo, updatedAt]);
-    res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso no Neon!` });
+    res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
   } catch (error) {
-    console.error("Erro ao salvar ficha:", error);
-    res.status(500).json({ erro: "Erro interno ao salvar no banco de dados." });
+    console.error("Erro detalhado ao salvar:", error);
+    res.status(500).json({ erro: error.message });
   }
 });
 
-// Buscar ficha por slug
+// Rota para Buscar Ficha
 app.get("/api/fichas/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
@@ -109,8 +101,8 @@ app.get("/api/fichas/:slug", async (req, res) => {
       updatedAt: row.updated_at
     });
   } catch (error) {
-    console.error("Erro ao buscar ficha:", error);
-    res.status(500).json({ erro: "Erro interno ao buscar no banco de dados." });
+    console.error("Erro ao buscar:", error);
+    res.status(500).json({ erro: error.message });
   }
 });
 
