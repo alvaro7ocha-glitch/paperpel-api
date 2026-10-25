@@ -5,7 +5,7 @@ const { Pool } = require("pg");
 const app = express();
 
 app.use(cors());
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "10mb" })); // Limite aumentado para garantir o envio da foto
 
 const pool = new Pool({
   connectionString: process.env.NEON_DATABASE_URL,
@@ -14,28 +14,28 @@ const pool = new Pool({
   }
 });
 
-// Criação da tabela de forma segura ao iniciar
-pool.query(`
-  CREATE TABLE IF NOT EXISTS fichas_gamificacao (
-    slug TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    classe TEXT,
-    hobbies TEXT,
-    ratings JSONB,
-    photo TEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );
-`).catchall?.() || pool.query(`
-  CREATE TABLE IF NOT EXISTS fichas_gamificacao (
-    slug TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    classe TEXT,
-    hobbies TEXT,
-    ratings JSONB,
-    photo TEXT,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  );
-`).catch(err => console.error("Erro ao criar tabela:", err));
+// Função para criar a tabela automaticamente no Neon
+const criarTabelaSeNaoExistir = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS fichas_gamificacao (
+        slug TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        classe TEXT,
+        hobbies TEXT,
+        ratings JSONB,
+        photo TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    console.log("Tabela 'fichas_gamificacao' pronta no Neon!");
+  } catch (err) {
+    console.error("Erro ao verificar/criar tabela no Neon:", err.message);
+  }
+};
+
+// Executa a verificação da tabela ao ligar a API
+criarTabelaSeNaoExistir();
 
 app.get("/", (req, res) => {
   res.json({ status: "online", servico: "Paperpel API" });
@@ -72,10 +72,19 @@ app.post("/api/fichas", async (req, res) => {
         updated_at = EXCLUDED.updated_at;
     `;
 
-    await pool.query(query, [slug, name, classe, hobbies, JSON.stringify(ratings), photo, updatedAt]);
+    await pool.query(query, [
+      slug, 
+      name, 
+      classe || "", 
+      hobbies || "", 
+      JSON.stringify(ratings || {}), 
+      photo || "", 
+      updatedAt || new Date().toISOString()
+    ]);
+
     res.json({ sucesso: true, mensagem: `Ficha de ${name} salva com sucesso!` });
   } catch (error) {
-    console.error("Erro detalhado ao salvar:", error);
+    console.error("Erro ao salvar no Neon:", error);
     res.status(500).json({ erro: error.message });
   }
 });
@@ -101,7 +110,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
       updatedAt: row.updated_at
     });
   } catch (error) {
-    console.error("Erro ao buscar:", error);
+    console.error("Erro ao buscar no Neon:", error);
     res.status(500).json({ erro: error.message });
   }
 });
