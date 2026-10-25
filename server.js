@@ -4,8 +4,11 @@ const { Pool } = require("pg");
 
 const app = express();
 
+// Permite requisições de outros domínios
 app.use(cors());
-app.use(express.json({ limit: "10mb" })); // Limite aumentado para garantir o envio da foto
+
+// Aumenta o limite para aceitar imagens em Base64 grandes
+app.use(express.json({ limit: "10mb" }));
 
 const pool = new Pool({
   connectionString: process.env.NEON_DATABASE_URL,
@@ -14,7 +17,7 @@ const pool = new Pool({
   }
 });
 
-// Função para criar a tabela automaticamente no Neon
+// Garante a criação da tabela no Neon automaticamente
 const criarTabelaSeNaoExistir = async () => {
   try {
     await pool.query(`
@@ -28,13 +31,12 @@ const criarTabelaSeNaoExistir = async () => {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log("Tabela 'fichas_gamificacao' pronta no Neon!");
+    console.log("Tabela 'fichas_gamificacao' verificada/criada no Neon com sucesso!");
   } catch (err) {
     console.error("Erro ao verificar/criar tabela no Neon:", err.message);
   }
 };
 
-// Executa a verificação da tabela ao ligar a API
 criarTabelaSeNaoExistir();
 
 app.get("/", (req, res) => {
@@ -51,7 +53,7 @@ app.get("/teste-neon", async (req, res) => {
   }
 });
 
-// Rota para Salvar Ficha
+// Rota para Salvar / Atualizar Ficha
 app.post("/api/fichas", async (req, res) => {
   try {
     const { name, slug, classe, hobbies, ratings, photo, updatedAt } = req.body;
@@ -89,7 +91,7 @@ app.post("/api/fichas", async (req, res) => {
   }
 });
 
-// Rota para Buscar Ficha
+// Rota para Buscar Ficha por Slug
 app.get("/api/fichas/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
