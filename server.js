@@ -4,14 +4,18 @@ const { Pool } = require("pg");
 
 const app = express();
 
+// Configuração completa do CORS para aceitar qualquer origem e requisições OPTIONS
 app.use(cors({
-  origin: "*", // Permite qualquer origem comunicar com a API
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+app.options("*", cors()); // Responde imediatamente aos pedidos de pré-voo do browser
+
 app.use(express.json({ limit: "10mb" }));
 
+// Configuração da ligação ao Neon PostgreSQL
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -118,16 +122,4 @@ app.get("/api/fichas/:slug", async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Paperpel API rodando na porta ${PORT}`);
-});
-
-
-
-
-app.get("/teste-neon", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json({ conectado: true, banco: "Neon PostgreSQL", horario: result.rows[0].now });
-  } catch (error) {
-    res.status(500).json({ conectado: false, erro: error.message });
-  }
 });
