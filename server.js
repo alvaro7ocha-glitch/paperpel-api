@@ -4,14 +4,12 @@ const { Pool } = require("pg");
 
 const app = express();
 
-// Configuração completa do CORS para aceitar qualquer origem e requisições OPTIONS
+// Configuração completa do CORS (já trata do pré-voo automaticamente)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
-app.options("*", cors()); // Responde imediatamente aos pedidos de pré-voo do browser
 
 app.use(express.json({ limit: "10mb" }));
 
