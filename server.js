@@ -4,7 +4,12 @@ const { Pool } = require("pg");
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "*", // Permite qualquer origem comunicar com a API
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json({ limit: "10mb" }));
 
 const pool = new Pool({
