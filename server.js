@@ -4,7 +4,7 @@ const { Pool } = require("pg");
 
 const app = express();
 
-// Configuração completa do CORS (já trata do pré-voo automaticamente)
+// Configuração completa do CORS
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -80,7 +80,7 @@ app.post("/api/fichas", async (req, res) => {
       name, 
       classe || "", 
       hobbies || "", 
-      ratings || {}, // <--- Removido o JSON.stringify() para o JSONB aceitar o objeto nativamente
+      ratings || {}, 
       photo || "", 
       updatedAt || new Date().toISOString()
     ]);
@@ -92,7 +92,7 @@ app.post("/api/fichas", async (req, res) => {
   }
 });
 
-// Rota para Buscar Ficha por Slug
+// Rota para Buscar Ficha por Slug (Garantindo o envio explícito da foto)
 app.get("/api/fichas/:slug", async (req, res) => {
   try {
     const { slug } = req.params;
@@ -109,7 +109,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
       classe: row.classe,
       hobbies: row.hobbies,
       ratings: row.ratings,
-      photo: row.photo,
+      photo: row.photo, // <--- Propriedade da foto incluída para carregar corretamente
       updated_at: row.updated_at
     });
   } catch (error) {
