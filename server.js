@@ -80,7 +80,7 @@ app.post("/api/fichas", async (req, res) => {
       name, 
       classe || "", 
       hobbies || "", 
-      JSON.stringify(ratings || {}), 
+      ratings || {}, // <--- Removido o JSON.stringify() para o JSONB aceitar o objeto nativamente
       photo || "", 
       updatedAt || new Date().toISOString()
     ]);
@@ -110,7 +110,7 @@ app.get("/api/fichas/:slug", async (req, res) => {
       hobbies: row.hobbies,
       ratings: row.ratings,
       photo: row.photo,
-      updatedAt: row.updated_at
+      updated_at: row.updated_at
     });
   } catch (error) {
     return res.status(500).json({ erro: error.message });
